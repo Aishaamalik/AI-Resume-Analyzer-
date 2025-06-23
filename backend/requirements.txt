@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+spacy
+scikit-learn
+python-docx
+pymupdf
+weasyprint
+python-multipart 
