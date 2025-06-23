@@ -1,22 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Button, Typography, TextField, InputLabel, CircularProgress, MenuItem, Select, FormControl, InputLabel as MuiInputLabel } from '@mui/material';
 import { useNotification } from './NotificationProvider';
+import { useResumeAnalysis } from './ResumeAnalysisProvider';
 
 const BACKEND_URL = 'http://127.0.0.1:8000';
 
 const FileUpload = ({ onResumeUpload, onJDUpload }) => {
-  const [resumeFile, setResumeFile] = useState(null);
+  const { resumeFile, setResumeFile, resumePreview, setResumePreview, selectedCategory, setSelectedCategory, analysisResult, setAnalysisResult } = useResumeAnalysis();
   const [jdFile, setJDFile] = useState(null);
   const [jdText, setJDText] = useState('');
-  const [resumePreview, setResumePreview] = useState('');
   const [jdPreview, setJDPreview] = useState('');
   const [resumeError, setResumeError] = useState('');
   const [jdError, setJDError] = useState('');
   const [loadingResume, setLoadingResume] = useState(false);
   const [loadingJD, setLoadingJD] = useState(false);
   const [categories, setCategories] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [analysisResult, setAnalysisResult] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
   const { addNotification } = useNotification();
 
