@@ -10,6 +10,10 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import InfoIcon from '@mui/icons-material/Info';
 import DescriptionIcon from '@mui/icons-material/Description';
+import TimelineIcon from '@mui/icons-material/Timeline';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import EmojiPeopleIcon from '@mui/icons-material/EmojiPeople';
+import AssessmentIcon from '@mui/icons-material/Assessment';
 import {
   Chart as ChartJS,
   RadialLinearScale,
@@ -167,6 +171,152 @@ const Dashboard = () => {
                 ))}
               </Box>
             </Alert>
+          )}
+          {/* Timeline & Consistency Check Section */}
+          {analysisResult?.timeline_report && (
+            <Paper elevation={2} sx={{ p: 3, mt: 3, background: isDark ? theme.palette.background.paper : undefined }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 500, mb: 2 }}>
+                <TimelineIcon sx={{ color: 'info.main', mr: 1, verticalAlign: 'middle' }} />Timeline & Consistency Check
+              </Typography>
+              {analysisResult.timeline_report.issues?.length === 0 ? (
+                <Alert severity="success">No timeline gaps or overlaps detected.</Alert>
+              ) : (
+                <Box>
+                  {analysisResult.timeline_report.issues?.map((issue, idx) => (
+                    <Alert key={idx} severity="warning" sx={{ mb: 1 }}>{issue}</Alert>
+                  ))}
+                </Box>
+              )}
+              {/* Optionally show parsed date ranges for transparency */}
+              {analysisResult.timeline_report.parsed_dates?.length > 0 && (
+                <Box sx={{ mt: 2 }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                    <b>Extracted Date Ranges:</b>
+                  </Typography>
+                  <ul style={{ margin: 0, paddingLeft: 18 }}>
+                    {analysisResult.timeline_report.parsed_dates.map(([start, end, label], i) => (
+                      <li key={i}><span style={{ fontFamily: 'monospace' }}>{label}</span> &rarr; <span style={{ fontFamily: 'monospace' }}>{start} - {end}</span></li>
+                    ))}
+                  </ul>
+                </Box>
+              )}
+            </Paper>
+          )}
+          {/* Career Path Suggestions Section */}
+          {analysisResult?.career_suggestions && (
+            <Paper elevation={2} sx={{ p: 3, mt: 3, background: isDark ? theme.palette.background.paper : undefined }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 500, mb: 2 }}>
+                <TrendingUpIcon sx={{ color: 'success.main', mr: 1, verticalAlign: 'middle' }} />Career Path Suggestions
+              </Typography>
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>Next Possible Roles/Job Titles:</Typography>
+                {analysisResult.career_suggestions.next_roles?.length > 0 ? (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
+                    {analysisResult.career_suggestions.next_roles.map((role, i) => (
+                      <Chip key={i} label={role} color="secondary" variant="outlined" />
+                    ))}
+                  </Box>
+                ) : (
+                  <Typography variant="body2" color="text.secondary">No suggestions available.</Typography>
+                )}
+              </Box>
+              <Box>
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>Upskilling Suggestions:</Typography>
+                {analysisResult.career_suggestions.upskilling?.length > 0 ? (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
+                    {analysisResult.career_suggestions.upskilling.map((skill, i) => (
+                      <Chip key={i} label={skill} color="primary" variant="outlined" />
+                    ))}
+                  </Box>
+                ) : (
+                  <Typography variant="body2" color="text.secondary">No upskilling suggestions at this time.</Typography>
+                )}
+              </Box>
+            </Paper>
+          )}
+          {/* Soft Skills Detection Section */}
+          {analysisResult?.soft_skills && (
+            <Paper elevation={2} sx={{ p: 3, mt: 3, background: isDark ? theme.palette.background.paper : undefined }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 500, mb: 2 }}>
+                <EmojiPeopleIcon sx={{ color: 'warning.main', mr: 1, verticalAlign: 'middle' }} />Soft Skills Detected
+              </Typography>
+              {analysisResult.soft_skills.length > 0 ? (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                  {analysisResult.soft_skills.map((skill, i) => (
+                    <Chip key={i} label={skill} color="warning" variant="outlined" />
+                  ))}
+                </Box>
+              ) : (
+                <Typography variant="body2" color="text.secondary">No soft skills detected in the resume.</Typography>
+              )}
+            </Paper>
+          )}
+          {/* Readability & ATS Optimization Section */}
+          {analysisResult?.readability_ats_report && (
+            <Paper elevation={2} sx={{ p: 3, mt: 3, background: isDark ? theme.palette.background.paper : undefined }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 500, mb: 2 }}>
+                <AssessmentIcon sx={{ color: 'info.main', mr: 1, verticalAlign: 'middle' }} />Resume Readability & ATS Optimization
+              </Typography>
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>Flesch Reading Ease:</Typography>
+                <Chip label={analysisResult.readability_ats_report.flesch_reading_ease !== null ? analysisResult.readability_ats_report.flesch_reading_ease.toFixed(1) : 'N/A'} color="info" />
+                <Typography variant="body2" sx={{ fontWeight: 500, mt: 1 }}>Flesch-Kincaid Grade:</Typography>
+                <Chip label={analysisResult.readability_ats_report.flesch_kincaid_grade !== null ? analysisResult.readability_ats_report.flesch_kincaid_grade.toFixed(1) : 'N/A'} color="info" />
+              </Box>
+              <Divider sx={{ my: 2 }} />
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>Buzzword Overuse:</Typography>
+                {Object.keys(analysisResult.readability_ats_report.buzzword_counts || {}).length > 0 ? (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
+                    {Object.entries(analysisResult.readability_ats_report.buzzword_counts).map(([bw, count], i) => (
+                      <Chip key={i} label={`${bw} (${count})`} color={count > 2 ? 'error' : 'default'} variant="outlined" />
+                    ))}
+                  </Box>
+                ) : (
+                  <Typography variant="body2" color="text.secondary">No buzzwords detected.</Typography>
+                )}
+                {analysisResult.readability_ats_report.buzzword_flag && (
+                  <Alert severity="warning" sx={{ mt: 1 }}>Overuse of buzzwords detected. Consider reducing them for clarity.</Alert>
+                )}
+              </Box>
+              <Divider sx={{ my: 2 }} />
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>Passive Voice:</Typography>
+                <Typography variant="body2">Count: {analysisResult.readability_ats_report.passive_voice_count}</Typography>
+                {analysisResult.readability_ats_report.passive_voice_examples?.length > 0 && (
+                  <Box sx={{ mt: 1 }}>
+                    <Typography variant="body2" color="text.secondary">Examples:</Typography>
+                    <ul style={{ margin: 0, paddingLeft: 18 }}>
+                      {analysisResult.readability_ats_report.passive_voice_examples.map((ex, i) => (
+                        <li key={i}><span style={{ fontFamily: 'monospace' }}>{ex}</span></li>
+                      ))}
+                    </ul>
+                  </Box>
+                )}
+              </Box>
+              <Divider sx={{ my: 2 }} />
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>Section Headers:</Typography>
+                <Typography variant="body2" color="success.main">Found: {analysisResult.readability_ats_report.section_headers_found.join(', ') || 'None'}</Typography>
+                <Typography variant="body2" color="error.main">Missing: {analysisResult.readability_ats_report.section_headers_missing.join(', ') || 'None'}</Typography>
+              </Box>
+              <Divider sx={{ my: 2 }} />
+              <Box>
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>ATS Keyword Frequency:</Typography>
+                {Object.keys(analysisResult.readability_ats_report.ats_keyword_frequency || {}).length > 0 ? (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
+                    {Object.entries(analysisResult.readability_ats_report.ats_keyword_frequency).map(([kw, count], i) => (
+                      <Chip key={i} label={`${kw} (${count})`} color={count === 0 ? 'error' : 'primary'} variant="outlined" />
+                    ))}
+                  </Box>
+                ) : (
+                  <Typography variant="body2" color="text.secondary">No ATS keywords checked.</Typography>
+                )}
+                {analysisResult.readability_ats_report.ats_missing_keywords?.length > 0 && (
+                  <Alert severity="warning" sx={{ mt: 1 }}>Some important keywords are missing for ATS optimization.</Alert>
+                )}
+              </Box>
+            </Paper>
           )}
         </Grid>
       </Grid>
