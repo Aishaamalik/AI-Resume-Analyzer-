@@ -27,6 +27,35 @@ EXP_KEYWORDS = ['engineer', 'developer', 'manager', 'analyst', 'consultant', 'in
 
 DATASET_PATH = 'UpdatedResumeDataSet.csv'
 
+# Mapping of categories to their top skills
+CATEGORY_SKILLS = {
+    'Advocate': 'legal, law, advocate, court, district, courts, criminal, cases, chennai, high, matters, paper, llb, civil, drafting',
+    'Arts': 'arts, council, british, music, days, events, experience, state, managing, new, marketing, nagpur, workshop, board, programmes',
+    'Automation Testing': 'qtp, good, integration, involved, cases, selenium, manual, regression, creation, driven, functional, release, case, plan, bug',
+    'Blockchain': 'blockchain, ethereum, smart, computer, build, global, contracts, product, solidity, limited, analytics, html, javascript, css, networking',
+    'Business Analyst': 'requirement, functional, analysis, analyst, user, report, cases, processes, gathering, cash, maintain, excel, documentation, end, users',
+    'Civil Engineer': 'civil, site, construction, inspection, drawings, material, building, name, etc, ensure, autocad, position, including, job, specifications',
+    'Data Science': 'learning, science, machine, analytics, analysis, deep, sap, text, platform, information, hana, nlp, industry, experience, neural',
+    'Database': 'oracle, databases, backup, installation, servers, administrator, monitoring, creating, log, rman, linux, backups, user, production, managing',
+    'DevOps Engineer': 'shell, devops, servers, build, applications, scripts, linux, users, cloud, scripting, deployment, different, commerce, creating, aws',
+    'DotNet Developer': 'net, asp, jquery, dot, mvc, javascript, framework, layer, html, visual, css, designing, studio, end, comments',
+    'ETL Developer': 'etl, informatica, talend, unix, mappings, oracle, unit, jobs, center, source, warehouse, job, power, files, reconciliation',
+    'Electrical Engineering': 'electrical, maintenance, power, operation, control, plant, layout, equipment, cable, panels, panel, completed, drawing, schedules, distribution',
+    'HR': 'payroll, june, computer, mba, statutory, compliance, employee, salary, employees, dynamics, school, payment, form, accounting, dbms',
+    'Hadoop': 'hadoop, hive, sqoop, hdfs, spark, cluster, pig, involved, mapreduce, queries, hbase, tables, scala, map, reduce',
+    'Health and Fitness': 'fitness, health, gym, nutrition, science, related, handling, queries, customers, hotel, centre, high, good, people, spa',
+    'Java Developer': 'ajax, spring, jsp, hibernate, javascript, servlet, jquery, computer, title, systems, databases, amravati, website, operating, oracle',
+    'Mechanical Engineer': 'mechanical, products, vendor, cost, vendors, machine, proposal, manufacturing, order, also, field, quotations, ensure, maintain, estimation',
+    'Network Security Engineer': 'network, security, cisco, configuration, firewall, etc, switches, servers, firewalls, devices, troubleshooting, asa, troubleshoot, routing, maintaining',
+    'Operations Manager': 'ensuring, job, timely, ensure, meetings, honeywell, control, monitored, ges, fat, customers, managing, activity, international, delivery',
+    'PMO': 'report, responsible, sla, documentation, risk, resource, monitor, senior, maintain, ensure, reporting, pmo, billing, delivery, ability',
+    'Python Developer': 'completed, internal, django, computer, movex, erp, rest, api, agile, science, html, june, mongodb, created, successfully',
+    'SAP Developer': 'sap, hana, users, webi, bods, universe, end, views, order, experience, performance, implemented, user, nestle, involved',
+    'Sales': 'marketing, office, targets, cricket, staff, performance, managing, clients, leads, high, school, calling, good, lead, job',
+    'Testing': 'check, transformer, android, assembly, inspection, electronics, resistance, core, power, name, transformers, tests, good, electrical, state',
+    'Web Designing': 'bootstrap, jquery, developed, roles, responsibility, website, designed, com, photoshop, php, javascript, nagpur, trust, made, loan',
+}
+
 class ResumeBenchmarkModel:
     def __init__(self, dataset_path=DATASET_PATH):
         self.df = pd.read_csv(dataset_path)
@@ -53,7 +82,7 @@ class ResumeBenchmarkModel:
         cat_texts = self.df[self.df['Category'] == category]['Resume'].astype(str).tolist()
         if not cat_texts:
             return []
-        tfidf = self.vectorizer.fit_transform(cat_texts)
+        tfidf = self.vectorizer.transform(cat_texts)
         feature_array = self.vectorizer.get_feature_names_out()
         avg_tfidf = tfidf.mean(axis=0).A1
         top_indices = avg_tfidf.argsort()[::-1][:top_n]
@@ -64,10 +93,23 @@ class ResumeBenchmarkModel:
         resume_vec = self.vectorizer.transform([resume_text])
         cat_vec = self.category_profiles.get(category)
         if cat_vec is None:
-            return 0.0
+            return {"similarity": 0.0, "skill_match": 0.0, "matched_skills": []}
         # Ensure both are arrays
         sim = cosine_similarity(resume_vec, cat_vec)
-        return float(sim[0, 0])
+        similarity_score = float(sim[0, 0])
+
+        # Skill match logic
+        skills_str = CATEGORY_SKILLS.get(category, "")
+        skill_list = [s.strip().lower() for s in skills_str.split(",") if s.strip()]
+        resume_text_lower = resume_text.lower()
+        matched_skills = [skill for skill in skill_list if skill in resume_text_lower]
+        skill_match_score = len(matched_skills) / len(skill_list) if skill_list else 0.0
+
+        return {
+            "similarity": similarity_score,
+            "skill_match": skill_match_score,
+            "matched_skills": matched_skills
+        }
 
 # Singleton for the model
 benchmark_model = None
@@ -136,4 +178,11 @@ def extract_resume_entities(text: str) -> Dict[str, List[str]]:
         'experience': list(experience),
         'organizations': orgs,
         'dates': dates
-    } 
+    }
+
+def add_skills_column_to_dataset(dataset_path=DATASET_PATH):
+    df = pd.read_csv(dataset_path)
+    # Add the Skills column based on Category
+    df['Skills'] = df['Category'].map(CATEGORY_SKILLS)
+    df.to_csv(dataset_path, index=False)
+    print('Skills column added and dataset overwritten.') 
