@@ -5,10 +5,13 @@ import CloseIcon from '@mui/icons-material/Close';
 import { useNotification } from './NotificationProvider';
 
 const NotificationMenu = () => {
-  const { notifications, removeNotification } = useNotification();
+  const { notifications, removeNotification, unreadCount, markAllAsRead } = useNotification();
   const [anchorEl, setAnchorEl] = useState(null);
 
-  const handleOpen = (event) => setAnchorEl(event.currentTarget);
+  const handleOpen = (event) => {
+    setAnchorEl(event.currentTarget);
+    markAllAsRead();
+  };
   const handleClose = () => setAnchorEl(null);
 
   const open = Boolean(anchorEl);
@@ -16,7 +19,7 @@ const NotificationMenu = () => {
   return (
     <>
       <IconButton color="inherit" onClick={handleOpen}>
-        <Badge badgeContent={notifications.length} color="error">
+        <Badge badgeContent={unreadCount} color="error">
           <NotificationsIcon />
         </Badge>
       </IconButton>

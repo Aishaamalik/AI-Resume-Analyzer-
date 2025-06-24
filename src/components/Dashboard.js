@@ -1,7 +1,15 @@
-import React from 'react';
-import { Box, Typography, Paper, Grid } from '@mui/material';
+import React, { useState } from 'react';
+import { Box, Typography, Paper, Grid, Chip, Divider, Collapse, IconButton, Tooltip, Alert } from '@mui/material';
 import { useResumeAnalysis } from './ResumeAnalysisProvider';
 import { Radar, Bar } from 'react-chartjs-2';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import CategoryIcon from '@mui/icons-material/Category';
+import ScoreIcon from '@mui/icons-material/Score';
+import ListAltIcon from '@mui/icons-material/ListAlt';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import HighlightOffIcon from '@mui/icons-material/HighlightOff';
+import InfoIcon from '@mui/icons-material/Info';
+import DescriptionIcon from '@mui/icons-material/Description';
 import {
   Chart as ChartJS,
   RadialLinearScale,
@@ -10,9 +18,10 @@ import {
   LinearScale,
   PointElement,
   LineElement,
-  Tooltip,
+  Tooltip as ChartTooltip,
   Legend,
 } from 'chart.js';
+import { useTheme } from '@mui/material/styles';
 
 ChartJS.register(
   RadialLinearScale,
@@ -21,20 +30,23 @@ ChartJS.register(
   LinearScale,
   PointElement,
   LineElement,
-  Tooltip,
+  ChartTooltip,
   Legend
 );
 
 const Dashboard = () => {
   const { resumePreview, selectedCategory, analysisResult } = useResumeAnalysis();
+  const [showPreview, setShowPreview] = useState(false);
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
 
   // Skill gap analysis
   let matchedSkills = [], missingSkills = [], recommendations = [];
-  if (analysisResult && analysisResult.top_skills) {
+  if (analysisResult && analysisResult.all_skills) {
     const resumeText = resumePreview.toLowerCase();
-    matchedSkills = analysisResult.top_skills.filter(skill => resumeText.includes(skill));
-    missingSkills = analysisResult.top_skills.filter(skill => !resumeText.includes(skill));
-    recommendations = missingSkills.map(skill => `Consider adding or highlighting the skill: "${skill}" in your resume.`);
+    matchedSkills = analysisResult.all_skills.filter(skill => resumeText.includes(skill));
+    missingSkills = analysisResult.all_skills.filter(skill => !resumeText.includes(skill));
+    recommendations = missingSkills;
   }
 
   // Radar chart data
@@ -64,52 +76,100 @@ const Dashboard = () => {
   };
 
   return (
-    <Box>
-      <Typography variant="h5" gutterBottom>Resume Analysis Dashboard</Typography>
-      <Paper sx={{ p: 2, mb: 2 }}>
-        <Typography variant="subtitle1">Selected Category: {selectedCategory || 'None'}</Typography>
-        <Typography variant="subtitle1">Resume Preview:</Typography>
-        <Box sx={{ bgcolor: '#f5f5f5', p: 1, borderRadius: 1, mb: 2 }}>
-          <Typography variant="body2">{resumePreview || 'No resume uploaded.'}</Typography>
-        </Box>
-        {analysisResult ? (
-          <>
-            <Typography variant="subtitle1">Similarity Score: {analysisResult.similarity?.toFixed(3)}</Typography>
-            <Typography variant="subtitle2" sx={{ mt: 1 }}>Top Skills for {selectedCategory}:</Typography>
-            <ul>
-              {analysisResult.top_skills?.map((skill) => (
-                <li key={skill}>{skill}</li>
-              ))}
-            </ul>
-            <Grid container spacing={3} sx={{ mt: 2 }}>
+    <Box sx={{ p: { xs: 1, md: 3 }, background: isDark ? theme.palette.background.default : '#f7f9fa', minHeight: '100vh' }}>
+      <Typography variant="h5" gutterBottom align="center" sx={{ fontWeight: 600, mb: 3 }}>
+        <ListAltIcon sx={{ mr: 1, verticalAlign: 'middle' }} /> Resume Analysis Dashboard
+      </Typography>
+      <Grid container spacing={3}>
+        {/* Summary Card */}
+        <Grid item xs={12} md={4}>
+          <Paper elevation={3} sx={{ p: 3, mb: 2, textAlign: 'center', background: isDark ? theme.palette.background.paper : undefined }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 500, mb: 1 }}>
+              <CategoryIcon sx={{ mr: 1, verticalAlign: 'middle' }} />Category
+            </Typography>
+            <Typography variant="h6" color="primary" sx={{ mb: 2 }}>{selectedCategory || 'None'}</Typography>
+            <Divider sx={{ my: 1 }} />
+            <Typography variant="subtitle1" sx={{ fontWeight: 500, mb: 1 }}>
+              <ScoreIcon sx={{ mr: 1, verticalAlign: 'middle' }} />Similarity Score
+            </Typography>
+            <Typography variant="h4" color="secondary" sx={{ fontWeight: 700, mb: 1 }}>
+              {analysisResult?.similarity !== undefined ? analysisResult.similarity?.toFixed(3) : '--'}
+            </Typography>
+          </Paper>
+          <Paper elevation={2} sx={{ p: 2, mb: 2, background: isDark ? theme.palette.background.paper : undefined }}>
+            <Box display="flex" alignItems="center" justifyContent="space-between">
+              <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>
+                <DescriptionIcon sx={{ mr: 1, verticalAlign: 'middle' }} />Resume Preview
+              </Typography>
+              <Tooltip title={showPreview ? 'Hide Preview' : 'Show Preview'}>
+                <IconButton onClick={() => setShowPreview((v) => !v)}>
+                  <ExpandMoreIcon sx={{ transform: showPreview ? 'rotate(180deg)' : 'rotate(0deg)', transition: '0.2s' }} />
+                </IconButton>
+              </Tooltip>
+            </Box>
+            <Collapse in={showPreview}>
+              <Box sx={{ bgcolor: isDark ? theme.palette.background.default : '#f5f5f5', p: 1, borderRadius: 1, mt: 1, maxHeight: 200, overflow: 'auto' }}>
+                <Typography variant="body2">{resumePreview || 'No resume uploaded.'}</Typography>
+              </Box>
+            </Collapse>
+          </Paper>
+        </Grid>
+        {/* Charts and Skills */}
+        <Grid item xs={12} md={8}>
+          <Paper elevation={3} sx={{ p: 3, mb: 2, background: isDark ? theme.palette.background.paper : undefined }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 500, mb: 2 }}>
+              <CheckCircleIcon sx={{ color: 'success.main', mr: 1, verticalAlign: 'middle' }} />Matched Skills
+            </Typography>
+            {matchedSkills.length > 0 ? (
+              <Box sx={{ mb: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                {matchedSkills.map(skill => (
+                  <Chip key={skill} label={skill} color="success" variant="filled" />
+                ))}
+              </Box>
+            ) : (
+              <Typography variant="body2" color="text.secondary">No matched skills found.</Typography>
+            )}
+            <Divider sx={{ my: 2 }} />
+            <Typography variant="subtitle1" sx={{ fontWeight: 500, mb: 2 }}>
+              <HighlightOffIcon sx={{ color: 'error.main', mr: 1, verticalAlign: 'middle' }} />Missing Skills
+            </Typography>
+            {missingSkills.length > 0 ? (
+              <Box sx={{ mb: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                {missingSkills.map(skill => (
+                  <Chip key={skill} label={skill} color="error" variant="outlined" />
+                ))}
+              </Box>
+            ) : (
+              <Typography variant="body2" color="text.secondary">No missing skills detected.</Typography>
+            )}
+            <Divider sx={{ my: 2 }} />
+            <Grid container spacing={3}>
               <Grid item xs={12} md={6}>
-                <Typography variant="subtitle1">Skills Match (Radar Chart)</Typography>
+                <Typography variant="subtitle1" sx={{ fontWeight: 500, mb: 1 }}>
+                  <CheckCircleIcon sx={{ color: 'primary.main', mr: 1, verticalAlign: 'middle' }} />Skills Match (Radar Chart)
+                </Typography>
                 <Radar data={radarData} />
               </Grid>
               <Grid item xs={12} md={6}>
-                <Typography variant="subtitle1">Missing Skills (Bar Chart)</Typography>
+                <Typography variant="subtitle1" sx={{ fontWeight: 500, mb: 1 }}>
+                  <HighlightOffIcon sx={{ color: 'primary.main', mr: 1, verticalAlign: 'middle' }} />Missing Skills (Bar Chart)
+                </Typography>
                 <Bar data={barData} options={{ indexAxis: 'y' }} />
               </Grid>
             </Grid>
-            <Box sx={{ mt: 3 }}>
-              <Typography variant="subtitle1">Matched Skills</Typography>
-              <ul>
-                {matchedSkills.map(skill => <li key={skill}>{skill}</li>)}
-              </ul>
-              <Typography variant="subtitle1">Missing Skills</Typography>
-              <ul>
-                {missingSkills.map(skill => <li key={skill}>{skill}</li>)}
-              </ul>
-              <Typography variant="subtitle1" sx={{ mt: 2 }}>Recommendations</Typography>
-              <ul>
-                {recommendations.map((rec, i) => <li key={i}>{rec}</li>)}
-              </ul>
-            </Box>
-          </>
-        ) : (
-          <Typography variant="body2" color="text.secondary">No analysis result yet. Please analyze a resume first.</Typography>
-        )}
-      </Paper>
+          </Paper>
+          {recommendations.length > 0 && (
+            <Alert icon={<InfoIcon fontSize="inherit" />} severity="info" sx={{ mt: 2, fontSize: 16, background: isDark ? theme.palette.background.paper : undefined, color: isDark ? '#fff' : undefined }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 500, mb: 1 }}>Recommended Skills to Add or Highlight</Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                {recommendations.map((rec, i) => (
+                  <Chip key={i} label={rec} color="primary" variant="outlined" />
+                ))}
+              </Box>
+            </Alert>
+          )}
+        </Grid>
+      </Grid>
     </Box>
   );
 };
