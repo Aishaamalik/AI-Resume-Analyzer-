@@ -1,7 +1,7 @@
 from fastapi import FastAPI, UploadFile, File, Form, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from utils import allowed_file, extract_text, extract_resume_entities, get_benchmark_model
+from utils import allowed_file, extract_text, extract_resume_entities, get_benchmark_model, check_timeline_consistency, suggest_career_path_and_upskilling, detect_soft_skills, analyze_readability_ats
 import pandas as pd
 from collections import Counter
 import re
@@ -64,12 +64,26 @@ async def analyze_resume(text: str = Body(...), category: str = Body(...)):
         # Add curated skills for this category, excluding stopwords
         from utils import CATEGORY_SKILLS
         curated_skills = [s.strip() for s in CATEGORY_SKILLS.get(category, "").split(",") if s.strip() and s.strip().lower() not in ENGLISH_STOP_WORDS]
+        # Timeline & Consistency Check
+        entities = extract_resume_entities(text)
+        timeline_report = check_timeline_consistency(entities.get('dates', []))
+        # Career Path Suggestions
+        missing_skills = [s for s in curated_skills if s not in result['matched_skills']]
+        career_suggestions = suggest_career_path_and_upskilling(category, missing_skills)
+        # Soft Skills Detection
+        soft_skills = detect_soft_skills(text)
+        # Readability & ATS Optimization
+        readability_ats_report = analyze_readability_ats(text, category, curated_skills)
         return {
             "similarity": result["similarity"],
             "skill_match": result["skill_match"],
             "matched_skills": result["matched_skills"],
             "top_skills": top_skills,
-            "all_skills": curated_skills
+            "all_skills": curated_skills,
+            "timeline_report": timeline_report,
+            "career_suggestions": career_suggestions,
+            "soft_skills": soft_skills,
+            "readability_ats_report": readability_ats_report
         }
     except Exception as e:
         return JSONResponse(status_code=400, content={"error": str(e)})
